@@ -1,31 +1,32 @@
-apiVersion: v1
-kind: Pod
-metadata:
-  name: multi-container-pod
-spec:
-  containers:
-  - name: web-container
-    image: nginx:latest
-    ports:
-    - containerPort: 80
-    env:
-    - name: ENVIRONMENT
-      value: "production"
-  - name: db-container
-    image: postgres:latest
-    ports:
-    - containerPort: 5432
-    env:
-    - name: POSTGRES_DB
-      value: "mydatabase"
-    - name: POSTGRES_USER
-      value: "myuser"
-    - name: POSTGRES_PASSWORD
-      value: "mypassword"
-  - name: cache-container
-    image: redis:latest
-    ports:
-    - containerPort: 6379
-    env:
-    - name: REDIS_PASSWORD
-      value: "redispassword"
+apiVersion: v1             # Kubernetes API version for this manifest (v1 for core resources like Pod)
+kind: Pod                  # Resource kind: Pod (a group of one or more containers)
+metadata:                  # Metadata for the Pod (name, labels, annotations, etc.)
+  name: multi-container-pod  # The name of the Pod object in the cluster
+spec:                      # Specification of the Pod (what containers it runs, volumes, etc.)
+  containers:              # List of containers that will run in this Pod
+  - name: web-container    # First container: a web server, name must be unique within the Pod
+    image: nginx:latest    # Container image to run (nginx, latest tag) — consider pinning to a specific version
+    ports:                 # List of ports exposed by this container
+    - containerPort: 80    # Port that the container listens on (internal to the Pod)
+    env:                   # Environment variables passed into this container
+    - name: ENVIRONMENT    # Environment variable key: ENVIRONMENT
+      value: "production"  # Environment variable value: "production"
+  - name: db-container     # Second container: a database container, unique name within the Pod
+    image: postgres:latest # Container image to run (Postgres, latest tag) — pin to a version for stability
+    ports:                 # Ports exposed by the db container
+    - containerPort: 5432  # Postgres default port inside the container
+    env:                   # Environment variables for the db container
+    - name: POSTGRES_DB    # Environment variable name: database name for Postgres
+      value: "mydatabase"  # Value for POSTGRES_DB
+    - name: POSTGRES_USER  # Environment variable name: Postgres user
+      value: "myuser"      # Value for POSTGRES_USER
+    - name: POSTGRES_PASSWORD # Environment variable name: Postgres password
+      value: "mypassword"  # Value for POSTGRES_PASSWORD (stored in plaintext here — use Kubernetes Secrets instead)
+  - name: cache-container  # Third container: a cache (Redis), unique name within the Pod
+    image: redis:latest    # Container image to run (Redis, latest tag) — pin to a version for stability
+    ports:                 # Ports exposed by the cache container
+    - containerPort: 6379  # Redis default port inside the container
+    env:                   # Environment variables for the cache container
+    - name: REDIS_PASSWORD # Environment variable name: Redis password
+      value: "redispassword" # Value for REDIS_PASSWORD (stored in plaintext here — use Kubernetes Secrets instead)
+# End of manifest (all lines annotated). Save or apply with `kubectl apply -f multicontainersPod.yml` if desired.
