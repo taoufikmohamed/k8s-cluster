@@ -1,102 +1,102 @@
-# Define a namespace for the application nginx
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: my-app-namespace
-  annotations:
-    description: "Namespace for my application"
----
-# Create a ConfigMap to store non-sensitive configuration data
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: my-app-config
-  namespace: my-app-namespace
-data:
-  config-key: config-value  # Key-value pair for configuration
----
-# Create a Secret to store sensitive data like passwords or API keys
-apiVersion: v1
-kind: Secret
-metadata:
-  name: my-app-secret
-  namespace: my-app-namespace
-type: Opaque
-data:
-  secret-key: $ {{ secrets.KUBECONFIG }}  # Example of Base64 encoded value for the secret
----
-# Define a Deployment to manage the application pods
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: my-app-deployment
-  namespace: my-app-namespace
-  annotations:
-    description: "Deployment for my application"
-spec:
-  replicas: 3  # Number of pod replicas
-  strategy:
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-  selector:
-    matchLabels:
-      app: my-app  # Label selector to identify pods
-  template:
-    metadata:
+# Define a namespace for the application nginx  # Human-readable header describing the block below
+apiVersion: v1  # Kubernetes API version for Namespace objects
+kind: Namespace  # Resource kind: Namespace creates an isolated scope for resources
+metadata:  # Metadata block (name, labels, annotations) for the Namespace
+  name: my-app-namespace  # The name of the Namespace to create
+  annotations:  # Optional annotations to store non-identifying metadata about the Namespace
+    description: "Namespace for my application"  # A short description of the Namespace purpose
+---  # YAML document separator: starts a new Kubernetes resource manifest
+# Create a ConfigMap to store non-sensitive configuration data  # Header describing the following ConfigMap
+apiVersion: v1  # API version for ConfigMap objects
+kind: ConfigMap  # Resource kind: ConfigMap stores non-sensitive key/value configuration
+metadata:  # Metadata block for the ConfigMap
+  name: my-app-config  # The name of the ConfigMap resource
+  namespace: my-app-namespace  # The Namespace where this ConfigMap will be created
+data:  # The key/value data stored in the ConfigMap
+  config-key: config-value  # Key-value pair for configuration used by pods (string values)
+---  # YAML document separator: starts the next resource
+# Create a Secret to store sensitive data like passwords or API keys  # Header describing the Secret resource
+apiVersion: v1  # API version for Secret objects
+kind: Secret  # Resource kind: Secret stores sensitive data (base64-encoded)
+metadata:  # Metadata for the Secret
+  name: my-app-secret  # The name of the Secret resource
+  namespace: my-app-namespace  # The Namespace where this Secret will live
+type: Opaque  # Secret type indicating arbitrary user-defined data as key/value pairs
+data:  # Base64-encoded key/value pairs for sensitive data
+  secret-key: $ {{ secrets.KUBECONFIG }}  # Example of Base64 encoded value for the secret (placeholder: must be base64); do NOT commit real secrets
+---  # YAML document separator: starts the next resource
+# Define a Deployment to manage the application pods  # Header describing the Deployment resource
+apiVersion: apps/v1  # API version for Deployment objects (apps/v1 is standard)
+kind: Deployment  # Resource kind: Deployment manages ReplicaSets and Pods
+metadata:  # Metadata for the Deployment
+  name: my-app-deployment  # The name of the Deployment
+  namespace: my-app-namespace  # Namespace where the Deployment will be created
+  annotations:  # Annotations for additional, non-identifying metadata
+    description: "Deployment for my application"  # Short description of the Deployment's purpose
+spec:  # Spec section defines the desired state for the Deployment
+  replicas: 3  # Desired number of pod replicas to run
+  strategy:  # Deployment update strategy configuration
+    rollingUpdate:  # Rolling update parameters to control updates
+      maxSurge: 1  # Maximum number of pods above desired replicas during update
+      maxUnavailable: 0  # Maximum number of pods that can be unavailable during update
+  selector:  # Selector to match pods managed by this Deployment
+    matchLabels:  # Label selector used to identify pods belonging to this Deployment
+      app: my-app  # Match pods with label app: my-app
+  template:  # Pod template used to create pods for the ReplicaSet
+    metadata:  # Metadata for the pod template (labels, annotations)
       labels:
-        app: my-app  # Label for the pods
-    spec:
+        app: my-app  # Label attached to pods created by this Deployment
+    spec:  # Pod spec: defines containers and runtime settings for pods
       containers:
-      - name: nginx-container  # Name of the container
-        image: nginx:1.23  # Docker image to use
+      - name: nginx-container  # Name of the container within the pod
+        image: nginx:1.23  # Container image and tag to run (nginx version 1.23)
         ports:
-        - containerPort: 80  # Port exposed by the container
+        - containerPort: 80  # Port the container listens on internally
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "250m"
+            memory: "128Mi"  # Memory the container requests (guaranteed scheduling)
+            cpu: "250m"  # CPU the container requests (in millicores)
           limits:
-            memory: "256Mi"
-            cpu: "500m"
+            memory: "256Mi"  # Maximum memory the container may use
+            cpu: "500m"  # Maximum CPU the container may use
         readinessProbe:
           httpGet:
-            path: /
-            port: 80
-          initialDelaySeconds: 3
-          periodSeconds: 5
+            path: /  # HTTP path to check readiness (root path)
+            port: 80  # Port to check for readiness on the container
+          initialDelaySeconds: 3  # Delay before the first readiness check after container start
+          periodSeconds: 5  # Frequency (seconds) between readiness checks
         livenessProbe:
           httpGet:
-            path: /
-            port: 80
-          initialDelaySeconds: 10
-          periodSeconds: 20
+            path: /  # HTTP path to check liveness (root path)
+            port: 80  # Port to check for liveness on the container
+          initialDelaySeconds: 10  # Delay before the first liveness check after container start
+          periodSeconds: 20  # Frequency (seconds) between liveness checks
         env:
-        - name: CONFIG_KEY
+        - name: CONFIG_KEY  # Environment variable name inside the container
           valueFrom:
             configMapKeyRef:
-              name: my-app-config  # Reference to ConfigMap
-              key: config-key  # Key in the ConfigMap
-        - name: SECRET_KEY
+              name: my-app-config  # Reference the ConfigMap by name to populate this env var
+              key: config-key  # Key in the ConfigMap to use for the env var value
+        - name: SECRET_KEY  # Environment variable name for sensitive data
           valueFrom:
             secretKeyRef:
-              name: my-app-secret  # Reference to Secret
-              key: secret-key  # Key in the Secret
----
-# Define a Service to expose the application
-apiVersion: v1
-kind: Service
-metadata:
-  name: my-app-service
-  namespace: my-app-namespace
+              name: my-app-secret  # Reference the Secret by name to populate this env var
+              key: secret-key  # Key in the Secret to use for the env var value
+---  # YAML document separator: starts next resource
+# Define a Service to expose the application  # Header describing the Service resource
+apiVersion: v1  # API version for Service objects
+kind: Service  # Resource kind: Service exposes pods to network
+metadata:  # Metadata for the Service
+  name: my-app-service  # The name of the Service resource
+  namespace: my-app-namespace  # Namespace where the Service will be created
   annotations:
-    description: "Service to expose my application"
-spec:
+    description: "Service to expose my application"  # Short description of the Service
+spec:  # Spec for the Service describing selector, ports, and type
   selector:
-    app: my-app  # Label selector to identify pods
+    app: my-app  # Select pods matching label app: my-app to be part of this Service
   ports:
-  - protocol: TCP
-    port: 80  # Port exposed by the service
-    targetPort: 80  # Port on the container
-  type: LoadBalancer  # Type of service to expose externally (type: ClusterIP for internal services instead)
-  healthCheckNodePort: 32000  # Optional health check for the service
+  - protocol: TCP  # Protocol for the Service port (TCP)
+    port: 80  # Port exposed by the Service (cluster IP)
+    targetPort: 80  # Port on the target pod/container to forward traffic to
+  type: LoadBalancer  # Service type: LoadBalancer requests an external load balancer (cloud providers)
+  healthCheckNodePort: 32000  # Optional node port used by some clouds for health checks; must be valid on the cluster nodes
